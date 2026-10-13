@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAppState } from './lib/store';
 import { rescheduleNotifications, showWebSummaryIfDue } from './lib/notifications';
+import { listenForSharedReceipts } from './lib/shareReceiver';
+import type { ReceiptFile } from './lib/receiptFile';
 import type { FoodItem } from './lib/types';
 import InventoryView from './components/InventoryView';
 import ShoppingView from './components/ShoppingView';
@@ -9,7 +11,7 @@ import ItemForm from './components/ItemForm';
 import ReceiptScan from './components/ReceiptScan';
 
 type Tab = 'hemma' | 'inkop' | 'installningar';
-type Modal = { kind: 'new' } | { kind: 'edit'; item: FoodItem } | { kind: 'receipt' } | null;
+type Modal = { kind: 'new' } | { kind: 'edit'; item: FoodItem } | { kind: 'receipt'; file?: ReceiptFile } | null;
 
 export default function App() {
   const app = useAppState();
@@ -22,6 +24,15 @@ export default function App() {
     rescheduleNotifications(state.items, state.settings);
     showWebSummaryIfDue(state.items, state.settings);
   }, [state.items, state.settings]);
+
+  useEffect(
+    () =>
+      listenForSharedReceipts((file) => {
+        setTab('hemma');
+        setModal({ kind: 'receipt', file });
+      }),
+    [],
+  );
 
   const openShopping = state.shopping.filter((s) => !s.done).length;
 
@@ -41,7 +52,7 @@ export default function App() {
         <div className="fab-wrap">
           {menuOpen && (
             <div className="fab-menu">
-              <button onClick={() => { setMenuOpen(false); setModal({ kind: 'receipt' }); }}>🧾 Skanna kvitto</button>
+              <button onClick={() => { setMenuOpen(false); setModal({ kind: 'receipt' }); }}>🧾 Lägg in kvitto</button>
               <button onClick={() => { setMenuOpen(false); setModal({ kind: 'new' }); }}>✏️ Lägg till vara</button>
             </div>
           )}
@@ -75,7 +86,7 @@ export default function App() {
         />
       )}
       {modal?.kind === 'receipt' && (
-        <ReceiptScan onClose={() => setModal(null)} onSave={(items) => { app.addItems(items); setModal(null); }} />
+        <ReceiptScan initialFile={modal.file} onClose={() => setModal(null)} onSave={(items) => { app.addItems(items); setModal(null); }} />
       )}
     </div>
   );

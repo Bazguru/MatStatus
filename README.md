@@ -5,7 +5,8 @@ Håll koll på maten i kylskåp, frys och skafferi. Appen påminner dig innan sa
 ## Funktioner
 
 - **Lager per plats** – Kylskåp, Frys, Skafferi, sorterat efter bäst före-datum med färgkodning (ok / går ut snart / utgånget).
-- **Skanna kvitto** – fota kvittot (eller klistra in text från ett digitalt kvitto) så läses varorna av med textigenkänning direkt i telefonen (Tesseract, svenska).
+- **Kvitton från Kivra** – bifoga kvittot som PDF i appen, eller välj *Dela → MatStatus* i Kivra. Digitala kvitton läses exakt (textlagret i PDF:en), inklusive antal och utan artikelnummer.
+- **Papperskvitton** – fota kvittot så läses varorna av med textigenkänning direkt i telefonen (Tesseract, svenska). Bilder och skärmdumpar kan också bifogas eller delas till appen.
 - **Bäst före-datum** – kvitton saknar datum, så varje vara får först ett **uppskattat** datum utifrån varutyp och plats (t.ex. köttfärs 4 dagar i kyl, 4 mån i frys). Uppskattade datum märks med `ca`. Fota datumet på förpackningen (📷) för att läsa av det exakta datumet – appen känner igen `2026-10-20`, `20.10.26`, `261020`, `20 okt` osv. och föredrar datumet efter "Bäst före"/"Sista förbrukningsdag".
 - **Öppnad förpackning** – kortar hållbarheten automatiskt (t.ex. mjölk 4 dagar efter öppning).
 - **Notiser** – daglig sammanfattning vid vald tid om vad som går ut snart (fungerar när appen är stängd på Android).

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LOCATIONS, type FoodItem, type Location } from '../lib/types';
 import { pickPhoto, recognizeText } from '../lib/ocr';
 import { parseReceipt } from '../lib/receiptParser';
+import { pickReceiptFile, receiptFileToText, type ReceiptFile } from '../lib/receiptFile';
 import { estimateExpiry, matchRule } from '../lib/shelfLife';
 import { today } from '../lib/dates';
 import ExpiryScanButton from './ExpiryScanButton';
@@ -9,6 +10,8 @@ import ExpiryScanButton from './ExpiryScanButton';
 type Draft = Omit<FoodItem, 'id'> & { include: boolean; key: number };
 
 interface Props {
+  /** A receipt shared into the app (Kivra → Dela → MatStatus). */
+  initialFile?: ReceiptFile;
   onSave: (items: Omit<FoodItem, 'id'>[]) => void;
   onClose: () => void;
 }
@@ -31,7 +34,7 @@ function toDraft(name: string, quantity: number, unit: string, key: number): Dra
   };
 }
 
-export default function ReceiptScan({ onSave, onClose }: Props) {
+export default function ReceiptScan({ initialFile, onSave, onClose }: Props) {
   const [stage, setStage] = useState<'start' | 'reading' | 'review'>('start');
   const [progress, setProgress] = useState(0);
   const [rows, setRows] = useState<Draft[]>([]);
@@ -65,6 +68,31 @@ export default function ReceiptScan({ onSave, onClose }: Props) {
     }
   };
 
+  const readFile = async (file: ReceiptFile) => {
+    setError(null);
+    setStage('reading');
+    setProgress(0);
+    try {
+      fromText(await receiptFileToText(file, setProgress));
+    } catch {
+      setError('Kunde inte läsa filen. Prova att spara kvittot som PDF eller ta en skärmbild.');
+      setStage('start');
+    }
+  };
+
+  const attach = async () => {
+    const file = await pickReceiptFile();
+    if (file) readFile(file);
+  };
+
+  const handledFile = useRef<ReceiptFile | null>(null);
+  useEffect(() => {
+    if (initialFile && handledFile.current !== initialFile) {
+      handledFile.current = initialFile;
+      readFile(initialFile);
+    }
+  }, [initialFile]);
+
   const update = (key: number, patch: Partial<Draft>) =>
     setRows((rs) =>
       rs.map((r) => {
@@ -88,14 +116,16 @@ export default function ReceiptScan({ onSave, onClose }: Props) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
-          <h2>Skanna kvitto</h2>
+          <h2>Lägg in kvitto</h2>
           <button className="icon" onClick={onClose} aria-label="Stäng">×</button>
         </header>
 
         {stage === 'start' && (
           <>
-            <p>Fota kvittot rakt uppifrån i bra ljus. Varorna läses av och får ett <b>uppskattat bäst före-datum</b> utifrån varutyp – du kan sedan fota datumet på förpackningar där det spelar roll (kött, fisk, mejeri).</p>
-            <button className="primary big" onClick={scan}>📷 Fota / välj kvitto</button>
+            <p>Varorna läses av och får ett <b>uppskattat bäst före-datum</b> utifrån varutyp – du kan sedan fota datumet på förpackningar där det spelar roll (kött, fisk, mejeri).</p>
+            <button className="primary big" onClick={attach}>📎 Bifoga kvitto (PDF från Kivra)</button>
+            <button className="secondary big" onClick={scan}>📷 Fota papperskvitto</button>
+            <p className="muted">Tips: i Kivra kan du öppna kvittot och välja <b>Dela → MatStatus</b>, så öppnas det direkt här.</p>
             {error && <p className="error">{error}</p>}
             <details>
               <summary>Klistra in kvittotext istället</summary>
@@ -108,7 +138,7 @@ export default function ReceiptScan({ onSave, onClose }: Props) {
 
         {stage === 'reading' && (
           <div className="reading">
-            <p>Läser kvittot… {Math.round(progress * 100)}%</p>
+            <p>Läser kvittot…{progress > 0 && ` ${Math.round(progress * 100)}%`}</p>
             <div className="bar"><div style={{ width: `${progress * 100}%` }} /></div>
           </div>
         )}
