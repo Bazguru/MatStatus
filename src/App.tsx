@@ -9,9 +9,28 @@ import ShoppingView from './components/ShoppingView';
 import SettingsView from './components/SettingsView';
 import ItemForm from './components/ItemForm';
 import ReceiptScan from './components/ReceiptScan';
+import Icon, { type IconName } from './components/Icon';
 
 type Tab = 'hemma' | 'inkop' | 'installningar';
 type Modal = { kind: 'new' } | { kind: 'edit'; item: FoodItem } | { kind: 'receipt'; file?: ReceiptFile } | null;
+
+const TABS: { id: Tab; label: string; icon: IconName; title: string }[] = [
+  { id: 'hemma', label: 'Hemma', icon: 'home', title: 'Hemma' },
+  { id: 'inkop', label: 'Inköp', icon: 'cart', title: 'Inköpslistor' },
+  { id: 'installningar', label: 'Inställningar', icon: 'settings', title: 'Inställningar' },
+];
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 10) return 'God morgon';
+  if (h < 17) return 'Hej';
+  return 'God kväll';
+}
+
+function todayLabel(): string {
+  const s = new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default function App() {
   const app = useAppState();
@@ -34,44 +53,59 @@ export default function App() {
     [],
   );
 
-  const openShopping = state.shopping.filter((s) => !s.done).length;
+  const openShopping = state.lists.reduce((n, l) => n + l.items.filter((i) => !i.done).length, 0);
+  const current = TABS.find((t) => t.id === tab)!;
 
   return (
     <div className="app">
-      <header className="topbar">
-        <h1>MatStatus</h1>
+      <header className={`topbar ${tab === 'hemma' ? 'tall' : ''}`}>
+        {tab === 'hemma' ? (
+          <>
+            <p className="eyebrow">{todayLabel()}</p>
+            <h1>{greeting()}!</h1>
+          </>
+        ) : (
+          <h1>{current.title}</h1>
+        )}
       </header>
 
-      <main className="content">
+      <main className={`content ${tab === 'hemma' ? 'overlap' : ''}`}>
         {tab === 'hemma' && <InventoryView app={app} onEdit={(item) => setModal({ kind: 'edit', item })} />}
         {tab === 'inkop' && <ShoppingView app={app} />}
         {tab === 'installningar' && <SettingsView app={app} />}
       </main>
 
       {tab === 'hemma' && (
-        <div className="fab-wrap">
-          {menuOpen && (
-            <div className="fab-menu">
-              <button onClick={() => { setMenuOpen(false); setModal({ kind: 'receipt' }); }}>🧾 Lägg in kvitto</button>
-              <button onClick={() => { setMenuOpen(false); setModal({ kind: 'new' }); }}>✏️ Lägg till vara</button>
-            </div>
-          )}
-          <button className="fab" aria-label="Lägg till" onClick={() => setMenuOpen((o) => !o)}>
-            {menuOpen ? '×' : '+'}
-          </button>
-        </div>
+        <>
+          {menuOpen && <div className="scrim" onClick={() => setMenuOpen(false)} />}
+          <div className="fab-wrap">
+            {menuOpen && (
+              <div className="fab-menu">
+                <button onClick={() => { setMenuOpen(false); setModal({ kind: 'receipt' }); }}>
+                  <Icon name="receipt" /> Lägg in kvitto
+                </button>
+                <button onClick={() => { setMenuOpen(false); setModal({ kind: 'new' }); }}>
+                  <Icon name="pencil" /> Lägg till vara
+                </button>
+              </div>
+            )}
+            <button className={`fab ${menuOpen ? 'open' : ''}`} aria-label="Lägg till" onClick={() => setMenuOpen((o) => !o)}>
+              <Icon name="plus" size={28} />
+            </button>
+          </div>
+        </>
       )}
 
       <nav className="tabbar">
-        <button className={tab === 'hemma' ? 'active' : ''} onClick={() => setTab('hemma')}>
-          <span>🏠</span>Hemma
-        </button>
-        <button className={tab === 'inkop' ? 'active' : ''} onClick={() => setTab('inkop')}>
-          <span>🛒</span>Inköp{openShopping > 0 && <b className="badge">{openShopping}</b>}
-        </button>
-        <button className={tab === 'installningar' ? 'active' : ''} onClick={() => setTab('installningar')}>
-          <span>⚙️</span>Inställningar
-        </button>
+        {TABS.map((t) => (
+          <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => { setTab(t.id); setMenuOpen(false); }}>
+            <span className="tab-icon">
+              <Icon name={t.icon} />
+              {t.id === 'inkop' && openShopping > 0 && <b className="badge">{openShopping}</b>}
+            </span>
+            {t.label}
+          </button>
+        ))}
       </nav>
 
       {modal?.kind === 'new' && (

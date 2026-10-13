@@ -1,9 +1,9 @@
 export type Location = 'kyl' | 'frys' | 'skafferi';
 
-export const LOCATIONS: { id: Location; label: string; icon: string }[] = [
-  { id: 'kyl', label: 'Kylskåp', icon: '🧊' },
-  { id: 'frys', label: 'Frys', icon: '❄️' },
-  { id: 'skafferi', label: 'Skafferi', icon: '🥫' },
+export const LOCATIONS: { id: Location; label: string; icon: 'fridge' | 'snow' | 'pantry' }[] = [
+  { id: 'kyl', label: 'Kylskåp', icon: 'fridge' },
+  { id: 'frys', label: 'Frys', icon: 'snow' },
+  { id: 'skafferi', label: 'Skafferi', icon: 'pantry' },
 ];
 
 /** Where the expiry date came from – lets the UI show how much to trust it. */
@@ -40,8 +40,16 @@ export interface Settings {
   notificationsEnabled: boolean;
 }
 
+export interface ShoppingList {
+  id: string;
+  name: string;
+  items: ShoppingItem[];
+}
+
 export interface AppState {
   items: FoodItem[];
-  shopping: ShoppingItem[];
+  lists: ShoppingList[];
+  /** The list "Slut" items are added to and that opens first. */
+  activeListId: string;
   settings: Settings;
 }

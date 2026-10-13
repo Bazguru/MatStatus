@@ -10,12 +10,17 @@ Håll koll på maten i kylskåp, frys och skafferi. Appen påminner dig innan sa
 - **Bäst före-datum** – kvitton saknar datum, så varje vara får först ett **uppskattat** datum utifrån varutyp och plats (t.ex. köttfärs 4 dagar i kyl, 4 mån i frys). Uppskattade datum märks med `ca`. Fota datumet på förpackningen (📷) för att läsa av det exakta datumet – appen känner igen `2026-10-20`, `20.10.26`, `261020`, `20 okt` osv. och föredrar datumet efter "Bäst före"/"Sista förbrukningsdag".
 - **Öppnad förpackning** – kortar hållbarheten automatiskt (t.ex. mjölk 4 dagar efter öppning).
 - **Notiser** – daglig sammanfattning vid vald tid om vad som går ut snart (fungerar när appen är stängd på Android).
-- **Inköpslista** – tryck *Slut* på en vara så hamnar den på listan. Bocka av när du handlat och tryck *Lägg in köpta hemma*.
+- **Inköpslistor** – skapa flera listor (t.ex. *Veckohandling*, *Tacokväll*). Tryck *Slut* på en vara hemma så hamnar den på aktiv lista. Skriv `2 mjölk` för antal. Bocka av när du handlat och tryck *Lägg in köpta hemma*.
+- **Skicka listan via SMS** – öppnar SMS-appen med listan ifylld, eller *Dela* till WhatsApp, Messenger, mejl m.m.
 - **Export/import** av data som JSON.
 
 ## Ladda ner APK
 
 Varje push bygger en APK i GitHub Actions (*Actions → Build APK → Artifacts → MatStatus-apk*). Packa upp zip-filen och installera `app-debug.apk` på telefonen (tillåt installation från okända källor).
+
+## Ikon
+
+Källfilerna ligger i `assets/` (SVG). Efter ändring: rendera om PNG-filerna och kör `npx capacitor-assets generate --android`. Behåll `mipmap-anydpi-v26/ic_launcher*.xml` utan inset – motivet är redan ritat inom säkra zonen.
 
 ## Utveckla
 

@@ -3,6 +3,7 @@ import { LOCATIONS, type ExpirySource, type FoodItem, type Location } from '../l
 import { CATEGORIES, estimateExpiry, matchRule, ruleForCategory } from '../lib/shelfLife';
 import { today } from '../lib/dates';
 import ExpiryScanButton from './ExpiryScanButton';
+import Icon from './Icon';
 
 type Draft = Omit<FoodItem, 'id'>;
 
@@ -71,9 +72,10 @@ export default function ItemForm({ initial, onSave, onClose, onDelete }: Props) 
           if (valid) onSave({ ...d, name: d.name.trim() });
         }}
       >
+        <div className="grabber" />
         <header className="modal-head">
           <h2>{initial ? 'Ändra vara' : 'Ny vara'}</h2>
-          <button type="button" className="icon" onClick={onClose} aria-label="Stäng">×</button>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Stäng"><Icon name="close" /></button>
         </header>
 
         <label>
@@ -103,7 +105,7 @@ export default function ItemForm({ initial, onSave, onClose, onDelete }: Props) 
               className={d.location === l.id ? 'on' : ''}
               onClick={() => { setLocationTouched(true); set('location', l.id as Location); }}
             >
-              {l.icon} {l.label}
+              <Icon name={l.icon} size={18} /> {l.label}
             </button>
           ))}
         </fieldset>
@@ -137,8 +139,8 @@ export default function ItemForm({ initial, onSave, onClose, onDelete }: Props) 
         <footer className="modal-foot">
           {onDelete && (
             <div className="row">
-              <button type="button" className="secondary" onClick={() => onDelete(true)}>Slut → inköpslista</button>
-              <button type="button" className="danger" onClick={() => onDelete(false)}>Kasta</button>
+              <button type="button" className="secondary" onClick={() => onDelete(true)}><Icon name="cart" size={18} /> Slut – handla</button>
+              <button type="button" className="danger" onClick={() => onDelete(false)}><Icon name="trash" size={18} /> Kasta</button>
             </div>
           )}
           <button type="submit" className="primary" disabled={!valid}>Spara</button>

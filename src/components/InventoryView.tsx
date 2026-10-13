@@ -1,16 +1,43 @@
 import { useMemo, useState } from 'react';
-import type { useAppState } from '../lib/store';
+import type { AppStore } from '../lib/store';
 import { LOCATIONS, type FoodItem, type Location } from '../lib/types';
-import { describeExpiry, expiryStatus } from '../lib/dates';
+import { daysUntil, describeExpiry, expiryStatus, type ExpiryStatus } from '../lib/dates';
+import Icon from './Icon';
 
-type App = ReturnType<typeof useAppState>;
+const GROUPS: { id: 'expired' | 'soon' | 'ok'; title: string }[] = [
+  { id: 'expired', title: 'Utgånget' },
+  { id: 'soon', title: 'Ät snart' },
+  { id: 'ok', title: 'I lager' },
+];
 
-export default function InventoryView({ app, onEdit }: { app: App; onEdit: (item: FoodItem) => void }) {
+function groupOf(status: ExpiryStatus): 'expired' | 'soon' | 'ok' {
+  if (status === 'expired') return 'expired';
+  if (status === 'ok') return 'ok';
+  return 'soon';
+}
+
+function DaysBadge({ iso, status }: { iso: string; status: ExpiryStatus }) {
+  const d = daysUntil(iso);
+  let big: string;
+  let small: string;
+  if (d < 0) { big = String(-d); small = -d === 1 ? 'dag sen' : 'dgr sen'; }
+  else if (d === 0) { big = '!'; small = 'idag'; }
+  else if (d < 100) { big = String(d); small = d === 1 ? 'dag' : 'dagar'; }
+  else { big = String(Math.round(d / 30)); small = 'mån'; }
+  return (
+    <span className={`days days-${status}`}>
+      <strong>{big}</strong>
+      <small>{small}</small>
+    </span>
+  );
+}
+
+export default function InventoryView({ app, onEdit }: { app: AppStore; onEdit: (item: FoodItem) => void }) {
   const { items, settings } = app.state;
   const [filter, setFilter] = useState<Location | 'alla'>('alla');
   const [query, setQuery] = useState('');
 
-  const sorted = useMemo(
+  const visible = useMemo(
     () =>
       items
         .filter((i) => filter === 'alla' || i.location === filter)
@@ -20,14 +47,12 @@ export default function InventoryView({ app, onEdit }: { app: App; onEdit: (item
   );
 
   const counts = useMemo(() => {
-    let expired = 0;
-    let soon = 0;
+    const c = { expired: 0, soon: 0 };
     for (const i of items) {
-      const s = expiryStatus(i.expiresAt, settings.warnDays);
-      if (s === 'expired') expired++;
-      else if (s === 'today' || s === 'soon') soon++;
+      const g = groupOf(expiryStatus(i.expiresAt, settings.warnDays));
+      if (g !== 'ok') c[g]++;
     }
-    return { expired, soon };
+    return c;
   }, [items, settings.warnDays]);
 
   const decrement = (item: FoodItem) => {
@@ -44,7 +69,7 @@ export default function InventoryView({ app, onEdit }: { app: App; onEdit: (item
         </div>
         <div className={`stat ${counts.soon ? 'warn' : ''}`}>
           <strong>{counts.soon}</strong>
-          <span>går ut snart</span>
+          <span>ät snart</span>
         </div>
         <div className={`stat ${counts.expired ? 'bad' : ''}`}>
           <strong>{counts.expired}</strong>
@@ -52,50 +77,72 @@ export default function InventoryView({ app, onEdit }: { app: App; onEdit: (item
         </div>
       </section>
 
-      <input className="search" placeholder="Sök vara…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <label className="search">
+        <Icon name="search" size={18} />
+        <input placeholder="Sök bland dina varor" value={query} onChange={(e) => setQuery(e.target.value)} />
+      </label>
 
       <div className="chips">
-        <button className={filter === 'alla' ? 'on' : ''} onClick={() => setFilter('alla')}>Alla</button>
+        <button className={filter === 'alla' ? 'on' : ''} onClick={() => setFilter('alla')}>
+          Alla <span className="count">{items.length}</span>
+        </button>
         {LOCATIONS.map((l) => (
           <button key={l.id} className={filter === l.id ? 'on' : ''} onClick={() => setFilter(l.id)}>
-            {l.icon} {l.label} ({items.filter((i) => i.location === l.id).length})
+            <Icon name={l.icon} size={16} /> {l.label} <span className="count">{items.filter((i) => i.location === l.id).length}</span>
           </button>
         ))}
       </div>
 
-      {sorted.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="empty">
-          <p>Inga varor här ännu.</p>
-          <p className="muted">Tryck på <b>+</b> för att skanna ett kvitto eller lägga till en vara.</p>
+          <div className="empty-art"><Icon name="fridge" size={40} /></div>
+          <h3>{items.length === 0 ? 'Kylen är tom' : 'Inga träffar'}</h3>
+          <p className="muted">
+            {items.length === 0 ? <>Tryck på <b>+</b> för att lägga in ett kvitto eller en vara.</> : 'Prova ett annat filter eller sökord.'}
+          </p>
         </div>
       ) : (
-        <ul className="list">
-          {sorted.map((item) => {
-            const status = expiryStatus(item.expiresAt, settings.warnDays);
-            const loc = LOCATIONS.find((l) => l.id === item.location)!;
-            return (
-              <li key={item.id} className={`card status-${status}`}>
-                <button className="card-main" onClick={() => onEdit(item)}>
-                  <span className="card-title">
-                    {loc.icon} {item.name}
-                    {item.opened && <em className="tag">öppnad</em>}
-                  </span>
-                  <span className="card-sub">
-                    {item.quantity} {item.unit} · {item.category}
-                  </span>
-                  <span className="card-exp">
-                    {describeExpiry(item.expiresAt)}
-                    {item.expirySource === 'estimated' && <em className="tag ghost" title="Uppskattat datum – tryck för att ändra">ca</em>}
-                  </span>
-                </button>
-                <div className="card-actions">
-                  <button title="Använd en" onClick={() => decrement(item)}>−1</button>
-                  <button title="Slut – lägg på inköpslistan" onClick={() => app.removeItem(item.id, true)}>Slut</button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        GROUPS.map((g) => {
+          const rows = visible.filter((i) => groupOf(expiryStatus(i.expiresAt, settings.warnDays)) === g.id);
+          if (rows.length === 0) return null;
+          return (
+            <section key={g.id} className="group">
+              <h2 className={`group-title group-${g.id}`}>{g.title} <span>{rows.length}</span></h2>
+              <ul className="list">
+                {rows.map((item) => {
+                  const status = expiryStatus(item.expiresAt, settings.warnDays);
+                  const loc = LOCATIONS.find((l) => l.id === item.location)!;
+                  return (
+                    <li key={item.id} className="card">
+                      <button className="card-main" onClick={() => onEdit(item)}>
+                        <DaysBadge iso={item.expiresAt} status={status} />
+                        <span className="card-text">
+                          <span className="card-title">{item.name}</span>
+                          <span className="card-sub">
+                            <Icon name={loc.icon} size={14} /> {loc.label} · {item.quantity} {item.unit}
+                            {item.opened && <em className="tag">öppnad</em>}
+                          </span>
+                          <span className="card-exp">
+                            {describeExpiry(item.expiresAt)}
+                            {item.expirySource === 'estimated' && <em className="tag ghost" title="Uppskattat datum – tryck för att ändra">ca</em>}
+                          </span>
+                        </span>
+                      </button>
+                      <div className="card-actions">
+                        <button aria-label="Använd en" title="Använd en" onClick={() => decrement(item)}>
+                          <Icon name="minus" size={18} />
+                        </button>
+                        <button aria-label="Slut – lägg på inköpslistan" title="Slut – lägg på inköpslistan" onClick={() => app.removeItem(item.id, true)}>
+                          <Icon name="cart" size={18} />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })
       )}
     </>
   );

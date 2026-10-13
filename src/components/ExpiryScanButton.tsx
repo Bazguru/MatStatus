@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { pickPhoto, recognizeText } from '../lib/ocr';
 import { parseExpiryDate } from '../lib/expiryParser';
+import Icon from './Icon';
 
 /** Photographs the "bäst före" label and reports the date found. */
 export default function ExpiryScanButton({ onDate, compact }: { onDate: (iso: string) => void; compact?: boolean }) {
@@ -31,7 +32,7 @@ export default function ExpiryScanButton({ onDate, compact }: { onDate: (iso: st
   return (
     <span className="scan-date">
       <button type="button" className="secondary" onClick={scan} disabled={busy} title="Fota bäst före-datumet">
-        {busy ? '⏳' : '📷'}{compact ? '' : busy ? ' Läser…' : ' Fota datum'}
+        <Icon name="camera" size={18} />{compact ? '' : busy ? ' Läser…' : ' Fota'}
       </button>
       {msg && <small className="error">{msg}</small>}
     </span>

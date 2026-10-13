@@ -6,6 +6,7 @@ import { pickReceiptFile, receiptFileToText, type ReceiptFile } from '../lib/rec
 import { estimateExpiry, matchRule } from '../lib/shelfLife';
 import { today } from '../lib/dates';
 import ExpiryScanButton from './ExpiryScanButton';
+import Icon from './Icon';
 
 type Draft = Omit<FoodItem, 'id'> & { include: boolean; key: number };
 
@@ -115,17 +116,30 @@ export default function ReceiptScan({ initialFile, onSave, onClose }: Props) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <div className="grabber" />
         <header className="modal-head">
           <h2>Lägg in kvitto</h2>
-          <button className="icon" onClick={onClose} aria-label="Stäng">×</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Stäng"><Icon name="close" /></button>
         </header>
 
         {stage === 'start' && (
           <>
-            <p>Varorna läses av och får ett <b>uppskattat bäst före-datum</b> utifrån varutyp – du kan sedan fota datumet på förpackningar där det spelar roll (kött, fisk, mejeri).</p>
-            <button className="primary big" onClick={attach}>📎 Bifoga kvitto (PDF från Kivra)</button>
-            <button className="secondary big" onClick={scan}>📷 Fota papperskvitto</button>
-            <p className="muted">Tips: i Kivra kan du öppna kvittot och välja <b>Dela → MatStatus</b>, så öppnas det direkt här.</p>
+            <button className="option-card" onClick={attach}>
+              <span className="option-icon"><Icon name="clip" size={26} /></span>
+              <span>
+                <b>Bifoga digitalt kvitto</b>
+                <small>PDF från Kivra, ICA- eller Coop-appen</small>
+              </span>
+            </button>
+            <button className="option-card" onClick={scan}>
+              <span className="option-icon"><Icon name="camera" size={26} /></span>
+              <span>
+                <b>Fota papperskvitto</b>
+                <small>Håll kvittot rakt och i bra ljus</small>
+              </span>
+            </button>
+            <p className="hint">💡 I Kivra: öppna kvittot och välj <b>Dela → MatStatus</b> så hamnar det direkt här.</p>
+            <p className="muted">Varorna får ett <b>uppskattat bäst före-datum</b> utifrån varutyp. Fota datumet på förpackningen där det spelar roll – kött, fisk och mejeri.</p>
             {error && <p className="error">{error}</p>}
             <details>
               <summary>Klistra in kvittotext istället</summary>
@@ -138,6 +152,7 @@ export default function ReceiptScan({ initialFile, onSave, onClose }: Props) {
 
         {stage === 'reading' && (
           <div className="reading">
+            <div className="spinner" />
             <p>Läser kvittot…{progress > 0 && ` ${Math.round(progress * 100)}%`}</p>
             <div className="bar"><div style={{ width: `${progress * 100}%` }} /></div>
           </div>
@@ -156,7 +171,7 @@ export default function ReceiptScan({ initialFile, onSave, onClose }: Props) {
                   </div>
                   <div className="row">
                     <select value={r.location} onChange={(e) => update(r.key, { location: e.target.value as Location })} aria-label="Plats">
-                      {LOCATIONS.map((l) => <option key={l.id} value={l.id}>{l.icon} {l.label}</option>)}
+                      {LOCATIONS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
                     </select>
                     <input className="grow" type="date" value={r.expiresAt} onChange={(e) => update(r.key, { expiresAt: e.target.value, expirySource: 'manual' })} aria-label="Bäst före" />
                     {r.expirySource === 'estimated' && <em className="tag ghost">ca</em>}
