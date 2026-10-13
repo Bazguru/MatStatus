@@ -35,9 +35,9 @@ export const SHELF_RULES: ShelfRule[] = [
   { category: 'Bröd', keywords: ['bröd', 'brod', 'limpa', 'baguette', 'fralla', 'frallor', 'tortilla', 'bulle', 'kanelbulle', 'hamburgerbröd', 'korvbröd', 'pitabröd', 'toast'], defaultLocation: 'skafferi', days: { skafferi: 5, frys: 90, kyl: 7 } },
   { category: 'Juice & dryck', keywords: ['juice', 'apelsinjuice', 'smoothie', 'läsk', 'cola', 'saft', 'öl', 'vatten', 'mineralvatten'], defaultLocation: 'kyl', days: { kyl: 21, skafferi: 180 }, openedDays: 5 },
   { category: 'Frysvaror', keywords: ['glass', 'fryst', 'frysta', 'pommes', 'fiskpinnar', 'frysgrönsaker', 'wokgrönsaker'], defaultLocation: 'frys', days: { frys: 180 } },
-  { category: 'Såser & dressing', keywords: ['ketchup', 'senap', 'majonnäs', 'majonas', 'dressing', 'sås', 'sas ', 'pesto', 'soja', 'salsa', 'sylt', 'marmelad'], defaultLocation: 'skafferi', days: { skafferi: 180, kyl: 180 }, openedDays: 30 },
+  { category: 'Såser & dressing', keywords: ['ketchup', 'senap', 'majonnäs', 'majonas', 'dressing', 'sås', 'sas ', 'pesto', 'soja', 'salsa', 'sylt', 'marmelad', 'dip ', 'dipp', 'aioli', 'bearnaise'], defaultLocation: 'skafferi', days: { skafferi: 180, kyl: 180 }, openedDays: 30 },
   { category: 'Torrvaror', keywords: ['pasta', 'spaghetti', 'makaroner', 'ris', 'mjöl', 'mjol', 'socker', 'havregryn', 'flingor', 'müsli', 'musli', 'bulgur', 'couscous', 'linser', 'nudlar', 'kaffe', 'te ', 'kakao', 'knäckebröd', 'knackebrod', 'nötter', 'mandel', 'kex', 'chips'], defaultLocation: 'skafferi', days: { skafferi: 270 } },
-  { category: 'Konserver', keywords: ['krossade tomater', 'konserv', 'burk', 'kokosmjölk', 'tonfisk', 'kikärtor', 'bönor', 'majs burk'], defaultLocation: 'skafferi', days: { skafferi: 365 }, openedDays: 3 },
+  { category: 'Konserver', keywords: ['krossade tomater', 'konserv', 'burk', 'kokosmjölk', 'tonfisk', 'kikärtor', 'bönor', 'majs burk', 'cornichon', 'pickles', 'oliver', 'inlagd', 'jalapeno'], defaultLocation: 'skafferi', days: { skafferi: 365 }, openedDays: 3 },
 ];
 
 export const FALLBACK_RULE: ShelfRule = {

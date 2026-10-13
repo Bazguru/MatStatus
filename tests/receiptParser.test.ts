@@ -40,3 +40,63 @@ describe('parseReceipt', () => {
     expect(items[0].quantity).toBe(2);
   });
 });
+
+const ICA_DIGITAL = `Beskrivning   Artikelnummer   Pris   Mängd   Summa(SEK)
+Cornichon   2239093   18,85   1,00 st   18,85
+Dip Tex Mex Style   1129858   27,90   1,00 st   27,90
+Garlic Salsa   1519342   21,65   1,00 st   21,65
+Kebabsås Het   2150968   28,30   1,00 st   28,30
+Nacho Chips Origi   2126537   12,20   1,00 st   12,20
+Pappkasse små 32L   2676622   4,00   1,00 st   4,00
+Standmjölk 3% ESL   1520783   16,50   2,00 st   33,00
+Tortilla Original   2043890   15,10   1,00 st   15,10
+Betalat   161,00
+Moms %   Moms   Netto   Brutto
+6,00   8,89   148,11   157,00
+25,00   0,80   3,20   4,00
+Erhållen rabatt   0,00
+Avrundning   0,00
+Kort   161,00
+Betalningsinformation`;
+
+describe('parseReceipt – digital table receipts', () => {
+  it('drops article numbers and reads the quantity column', () => {
+    const items = parseReceipt(ICA_DIGITAL);
+    expect(items.map((i) => i.name)).toEqual([
+      'Cornichon', 'Dip Tex Mex Style', 'Garlic Salsa', 'Kebabsås Het', 'Nacho Chips Origi', 'Standmjölk 3% ESL', 'Tortilla Original',
+    ]);
+    expect(items.find((i) => i.name.startsWith('Standmjölk'))).toMatchObject({ quantity: 2, unit: 'st', price: 33 });
+  });
+
+  it('handles tab-separated text and weighed goods', () => {
+    const items = parseReceipt('Bananer\t1234567\t24,90\t0,812 kg\t20,22');
+    expect(items[0]).toMatchObject({ name: 'Bananer', quantity: 0.812, unit: 'kg' });
+  });
+
+  it('strips a trailing article number from plain lines', () => {
+    expect(parseReceipt('Gurka 2239093   14,90')[0].name).toBe('Gurka');
+  });
+});
+
+// Real Tesseract output for the ICA receipt above – decimal commas get lost.
+const ICA_OCR = `Beskrivning Artikelnummer Pris Mängd  Summa(SEK)
+Cornichon 2239093 18,85 1,00 st 18,85
+Dip Tex Mex Style 1129858 2790 1,00 st 27,9
+Garlic Salsa 1519342 2165 1.00st 2165
+Kebabsås Het 2150068 2830 1.00st 2830
+Nacho Chips Origi 2126537 1220 1.00st 12,20
+Pappkasse små 321. 2676622 4,00 1,00 st 4,00
+Standmjölk 3% ESL 1520783 16.50 200st 33,00
+Tortilla Original 2043890 15,10 1.00st 15,10
+Betalat 161,00
+Moms % Moms Netto Brutto
+600 889 148,11 157,00`;
+
+describe('parseReceipt – noisy OCR of a digital receipt', () => {
+  it('recovers names, quantities and totals', () => {
+    const items = parseReceipt(ICA_OCR);
+    expect(items).toHaveLength(7);
+    expect(items.find((i) => i.name === 'Garlic Salsa')).toMatchObject({ quantity: 1, price: 21.65 });
+    expect(items.find((i) => i.name.startsWith('Standmjölk'))).toMatchObject({ quantity: 2, price: 33 });
+  });
+});

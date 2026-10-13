@@ -10,6 +10,24 @@ export interface ReceiptLine {
   price: number | null;
 }
 
+/**
+ * Table-style rows from digital receipts (ICA via Kivra/ICA-appen, Coop):
+ * "Standmjölk 3% ESL   1520783   16,50   2,00 st   33,00"
+ * name · article number (optional) · unit price · quantity + unit · line total
+ */
+const TABLE_ROW =
+  /^(.*?[A-Za-zÅÄÖåäöÉé].*?)\s+(?:\d{4,14}\s+)?(\d[\d.,]*)\s+(\d[\d.,]*)\s*(st|kg|5t|sl)\.?\s+(-?\d[\d.,]*)$/i;
+
+/**
+ * OCR often drops the decimal comma ("2,00 st" → "200st", "21,65" → "2165").
+ * Receipt amounts always have two decimals, so a bare number of 3+ digits
+ * is read as hundredths.
+ */
+function parseAmount(raw: string): number {
+  if (/[.,]/.test(raw)) return Number(raw.replace(',', '.'));
+  return raw.length >= 3 ? Number(raw) / 100 : Number(raw);
+}
+
 const PRICE_AT_END = /^(.*?[A-Za-zÅÄÖåäöÉé].*?)\s+(-?\d{1,5}[.,]\d{2})\s*(?:kr)?\s*[A-Z*]?$/;
 
 // "2 st * 12,90", "2st x 12.90", "3 ST*14,95"
@@ -28,7 +46,7 @@ const NOISE = [
 ];
 
 /** Once one of these appears, the item list is over. */
-const END_MARKERS = ['totalt', 'summa', 'att betala', 'total '];
+const END_MARKERS = ['totalt', 'summa', 'att betala', 'total ', 'betalat'];
 
 function isNoise(line: string): boolean {
   const l = line.toLowerCase();
@@ -43,6 +61,8 @@ function cleanName(raw: string): string {
     .trim();
   // Drop article numbers some stores print in front of the name.
   n = n.replace(/^\d{4,}\s+/, '');
+  // …or after it (article number / EAN column).
+  n = n.replace(/\s+\d{5,14}$/, '');
   // Title-case shouting receipts: "MJÖLK 3% 1,5L" -> "Mjölk 3% 1,5l"
   if (n === n.toUpperCase()) {
     n = n.charAt(0) + n.slice(1).toLowerCase();
@@ -76,6 +96,18 @@ export function parseReceipt(text: string): ReceiptLine[] {
       const last = items[items.length - 1];
       last.quantity = Number(weight[1].replace(',', '.'));
       last.unit = 'kg';
+      continue;
+    }
+
+    const row = line.match(TABLE_ROW);
+    if (row) {
+      if (isNoise(row[1])) continue;
+      const name = cleanName(row[1]);
+      const total = parseAmount(row[5]);
+      if (total < 0 || name.replace(/[^A-Za-zÅÄÖåäöÉé]/g, '').length < 3) continue;
+      const unit = row[4].toLowerCase() === 'kg' ? 'kg' : 'st';
+      const amount = parseAmount(row[3]);
+      items.push({ name, quantity: unit === 'st' ? Math.max(1, Math.round(amount)) : amount, unit, price: total });
       continue;
     }
 
