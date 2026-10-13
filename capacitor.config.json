@@ -1,0 +1,10 @@
+{
+  "appId": "se.matstatus.app",
+  "appName": "MatStatus",
+  "webDir": "dist",
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#2f7d4f"
+    }
+  }
+}
